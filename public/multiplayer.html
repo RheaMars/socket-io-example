@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title>Socket.io Example</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js" charset="utf-8"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Socket.io Example</h1>
+
+    <div id="connectionControls">
+        <fieldset>
+            <input type="radio" id="newRoom" name="joinType" value="create" checked>
+            <label for="newRoom">Create a new game</label>
+
+            <input type="radio" id="existingRoom" name="joinType" value="join">
+            <label for="existingRoom">Join an existing game</label>
+        </fieldset>
+
+        <fieldset>
+            <input id="clientName" type="text" placeholder="Enter your Name">
+        </fieldset>
+
+        <fieldset>
+            <input id="roomName" type="text" placeholder="Enter a Room Name">
+        </fieldset>
+
+        <fieldset>
+            <button id="connect" class="btn">Connect</button>
+        </fieldset>
+    </div>
+
+    <div id="serverMessagesContainer">
+        <h5 style="margin-bottom: 4px;">Server Messages</h5>
+        <div id="serverMessages"></div>
+    </div>
+
+</div>
+
+</body>
+</html>

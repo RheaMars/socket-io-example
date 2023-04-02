@@ -1,0 +1,21 @@
+{
+  "name": "socket-io-example",
+  "version": "1.0.0",
+  "description": "Socket.io Example",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server",
+    "dev": "nodemon server"
+  },
+  "keywords": ["socket.io"],
+  "author": "Rhea Marstaller",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
+
