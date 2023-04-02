@@ -37,9 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const joinType = document.querySelector("input[name='joinType']:checked");
 
         socket.emit("user.connectToRoom", {
-            clientName: clientName.value,
-            roomName: roomName.value,
-            joinType: joinType.value
+            clientNameInput: clientName.value,
+            roomNameInput: roomName.value,
+            joinTypeInput: joinType.value
         });
 
         socket.on("server.roomConnectionResult", response => {

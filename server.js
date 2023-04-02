@@ -1,7 +1,4 @@
 const socketio = require("socket.io");
-const express = require("express");
-const path = require("path");
-const http = require("http");
 const server = startServer();
 io = socketio(server);
 
@@ -14,15 +11,9 @@ function handleClientConnections() {
 
     io.on("connection", (socket) => {
 
-        //console.log("Client connected");
-
         handleAdminRequestForCurrentRooms(socket, occupiedRooms);
 
         handleUserRoomConnection(socket, occupiedRooms);
-
-        socket.on("disconnect", () => {
-            //console.log("Client disconnected");
-        });
     });
 }
 
@@ -36,19 +27,25 @@ function handleAdminRequestForCurrentRooms(socket, occupiedRooms) {
 
 function handleUserRoomConnection(socket, occupiedRooms) {
 
-    socket.on("user.connectToRoom", ({clientName, roomName, joinType}) => {
+    let socketRoomName;
+    let socketClientName;
+    let socketPlayerNumber;
 
-        if (joinType === "create") {
-            handleConnectionToNewRoom(roomName, clientName);
+    socket.on("user.connectToRoom", ({clientNameInput, roomNameInput, joinTypeInput}) => {
+
+        if (joinTypeInput === "create") {
+            handleConnectionToNewRoom(roomNameInput, clientNameInput);
         }
-        else if (joinType === "join") {
-            handleConnectionToExistingRoom(roomName, clientName);
+        else if (joinTypeInput === "join") {
+            handleConnectionToExistingRoom(roomNameInput, clientNameInput);
         }
+
+        handleDisconnectionOfUser(socket);
     });
 
-    function handleConnectionToNewRoom(roomName, clientName) {
+    function handleConnectionToNewRoom(roomNameInput, clientNameInput) {
 
-        if (roomExists(occupiedRooms, roomName)) {
+        if (roomExists(occupiedRooms, roomNameInput)) {
             socket.emit("server.roomConnectionResult", {
                 status: "error",
                 message: "Room Name is already taken - try again with another Room Name.",
@@ -57,25 +54,31 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             return;
         }
 
-        const room = createRoom(roomName, clientName);
+        const room = createRoom(roomNameInput, clientNameInput);
         occupiedRooms.push(room);
 
-        socket.join(roomName);
-        handleConnectionTimeout(socket, occupiedRooms, roomName, clientName, 1);
+        socketRoomName = roomNameInput;
+        socketClientName = clientNameInput;
+        socketPlayerNumber = 1;
+
+        socket.join(socketRoomName);
+
+        handleConnectionTimeout(socket);
 
         socket.emit("server.roomConnectionResult", {
             status: "success",
-            message: "Welcome to Room \"" + roomName + "\", " + clientName + ". We are now waiting for your teammate.",
+            message: "Welcome to Room \"" + socketRoomName + "\", " + socketClientName
+                + ". You are Player " + socketPlayerNumber + ". We are now waiting for your teammate.",
             timestamp: getCurrentTimestamp(new Date()),
-            clientName: clientName,
-            roomName: roomName,
-            playerNumber: 1
+            clientName: socketClientName,
+            roomName: socketRoomName,
+            playerNumber: socketPlayerNumber
         });
     }
 
-    function handleConnectionToExistingRoom(roomName, clientName) {
+    function handleConnectionToExistingRoom(roomNameInput, clientNameInput) {
 
-        if (!roomExists(occupiedRooms, roomName)) {
+        if (!roomExists(occupiedRooms, roomNameInput)) {
             socket.emit("server.roomConnectionResult", {
                 status: "error",
                 message: "Room does not exist.",
@@ -84,9 +87,9 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             return;
         }
 
-        const room = getRoomByRoomName(occupiedRooms, roomName);
+        const room = getRoomByRoomName(occupiedRooms, roomNameInput);
 
-        if (roomHasProperty(room, "player2")) {
+        if (isRoomFull(room)) {
             socket.emit("server.roomConnectionResult", {
                 status: "error",
                 message: "Room is already full - try again with another Room or create a new one.",
@@ -95,24 +98,52 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             return;
         }
 
-        room.player2 = clientName;
+        const playerNumber = addPlayerToExistingRoom(room, clientNameInput);
 
-        socket.join(roomName);
-        handleConnectionTimeout(socket, occupiedRooms, roomName, clientName, 2);
+        socketRoomName = roomNameInput;
+        socketClientName = clientNameInput;
+        socketPlayerNumber = playerNumber;
+
+        socket.join(socketRoomName);
+
+        handleConnectionTimeout(socket);
+
+        const clientNameOfOtherPlayer = getClientNameOfOtherPlayer(room, socketPlayerNumber);
 
         socket.emit("server.roomConnectionResult", {
             status: "success",
-            message: "Welcome to Room \"" + roomName + "\", " + clientName + ".",
+            message: "Welcome to Room \"" + socketRoomName + "\", " + socketClientName
+                + ". You are Player " + socketPlayerNumber +". "
+                + clientNameOfOtherPlayer + " is already waiting for you.",
             timestamp: getCurrentTimestamp(new Date()),
-            clientName: clientName,
-            roomName: roomName,
-            playerNumber: 2
+            clientName: socketClientName,
+            roomName: socketRoomName,
+            playerNumber: socketPlayerNumber
         });
 
         socket.broadcast.to(room.roomName).emit("server.serverMessage", {
-            message: clientName + " joined the Room.",
+            message: socketClientName + " joined the Room.",
             timestamp: getCurrentTimestamp(new Date()),
         });
+    }
+
+    function handleDisconnectionOfUser(socket) {
+
+        socket.on("disconnecting", () => {
+
+            socket.broadcast.to(socketRoomName).emit("server.serverMessage", {
+                message: socketClientName + " left the Room.",
+                timestamp: getCurrentTimestamp(new Date()),
+            });
+
+            // Last player is about to leave:
+            if (getNumberOfClientsConnectedToRoom(socketRoomName) === 1) {
+                deleteRoom(occupiedRooms, socketRoomName);
+            }
+            else {
+                deletePlayerFromRoom(occupiedRooms, socketRoomName, socketPlayerNumber);
+            }
+        })
     }
 
     function createRoom(roomName, clientName) {
@@ -126,62 +157,42 @@ function handleUserRoomConnection(socket, occupiedRooms) {
     }
 }
 
+/**
+ * Disconnect the socket after x minutes of idle time.
+ */
+function handleConnectionTimeout(socket) {
+
+    setTimeout(() => {
+
+        socket.emit("server.serverMessage", {
+            message: "You were disconnected due to inactivity.",
+            timestamp: getCurrentTimestamp(new Date()),
+        });
+
+        socket.disconnect();
+
+    }, 60 * minutesToTimeout * 1000);
+}
+
 function getNumberOfClientsConnectedToRoom(roomName) {
     return io.sockets.adapter.rooms.get(roomName)
         ? io.sockets.adapter.rooms.get(roomName).size : 0;
 }
 
-/**
- * Disconnect the user after x minutes of idle time and delete the room if nobody is left there.
- */
-function handleConnectionTimeout(socket, rooms, roomName, clientName, playerNumber) {
-
-    setTimeout(() => {
-
-        connectionTimeoutHandleSocketCleanup();
-        connectionTimeoutHandleRoomCleanup();
-
-    }, 60 * minutesToTimeout * 1000);
-
-    function connectionTimeoutHandleSocketCleanup() {
-        socket.emit("server.serverMessage", {
-            message: "You were disconnected due to inactivity.",
-            timestamp: getCurrentTimestamp(new Date()),
-        });
-        socket.disconnect();
-        socket.broadcast.to(roomName).emit("server.serverMessage", {
-            message: clientName + " was disconnected due to inactivity.",
-            timestamp: getCurrentTimestamp(new Date()),
-        });
-    }
-
-    function connectionTimeoutHandleRoomCleanup() {
-
-        if (getNumberOfClientsConnectedToRoom(roomName) === 0) {
-            deleteRoom(rooms, roomName);
-        }
-        else {
-            const room = getRoomByRoomName(rooms, roomName);
-
-            if (playerNumber === 1) {
-                delete room.player1;
-            } else if (playerNumber === 2) {
-                delete room.player2;
-            }
-        }
-    }
-}
-
-function roomExists(rooms, roomName) {
-    return getRoomIndex(rooms, roomName) !== -1;
+function roomExists(occupiedRooms, roomName) {
+    return getRoomIndex(occupiedRooms, roomName) !== -1;
 }
 
 function roomHasProperty(room, propertyString) {
-    return Object.hasOwn(room, propertyString);
+    return typeof room !== "undefined" && Object.hasOwn(room, propertyString);
 }
 
-function getRoomIndex(rooms, roomName) {
-    return rooms.map(function (o) {
+function isRoomFull(room) {
+    return roomHasProperty(room, "player1") && roomHasProperty(room, "player2");
+}
+
+function getRoomIndex(occupiedRooms, roomName) {
+    return occupiedRooms.map(function (o) {
         return o.roomName;
     }).indexOf(roomName);
 }
@@ -190,8 +201,40 @@ function getRoomByRoomName(rooms, roomName) {
     return rooms[getRoomIndex(rooms, roomName)];
 }
 
-function deleteRoom(rooms, roomName) {
-    rooms.splice(rooms.findIndex(room => room.roomName === roomName), 1);
+/**
+ * @returns {number} playerNumber
+ */
+function addPlayerToExistingRoom(room, clientName) {
+    if (roomHasProperty(room, "player1")) {
+        room.player2 = clientName;
+        return 2;
+    }
+    else if (roomHasProperty(room, "player2")) {
+        room.player1 = clientName;
+        return 1;
+    }
+}
+
+function deleteRoom(occupiedRooms, roomName) {
+    occupiedRooms.splice(occupiedRooms.findIndex(room => room.roomName === roomName), 1);
+}
+
+function deletePlayerFromRoom(occupiedRooms, socketRoomName, playerNumber) {
+
+    const room = getRoomByRoomName(occupiedRooms, socketRoomName);
+
+    if (playerNumber === 1 && roomHasProperty(room, "player1")) {
+        delete room.player1;
+    } else if (playerNumber === 2 && roomHasProperty(room, "player2")) {
+        delete room.player2;
+    }
+}
+
+function getClientNameOfOtherPlayer(room, socketPlayerNumber) {
+    if (socketPlayerNumber === 1) {
+        return room.player2;
+    }
+    return room.player1;
 }
 
 function getCurrentTimestamp(d) {
