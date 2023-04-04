@@ -5,9 +5,9 @@ io = socketio(server);
 const occupiedRooms = [];
 const minutesToTimeout = 20;
 
-handleClientConnections();
+serve();
 
-function handleClientConnections() {
+function serve() {
 
     io.on("connection", (socket) => {
 
@@ -74,6 +74,8 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             roomName: socketRoomName,
             playerNumber: socketPlayerNumber
         });
+
+        handleDraggableElements(socket, room);
     }
 
     function handleConnectionToExistingRoom(roomNameInput, clientNameInput) {
@@ -125,6 +127,22 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             message: socketClientName + " joined the Room.",
             timestamp: getCurrentTimestamp(new Date()),
         });
+
+        handleDraggableElements(socket, room);
+    }
+
+    function handleDraggableElements(socket, room) {
+
+        let draggableElements = room.draggableElements;
+
+        for (const draggableElementId in draggableElements) {
+            socket.emit('server.updatePositionOfDraggableElement', draggableElements[draggableElementId]);
+        }
+
+        socket.on("user.dragElement", function(data) {
+            draggableElements[data.id] = data;
+            socket.broadcast.to(room.roomName).emit('server.updatePositionOfDraggableElement', draggableElements[data.id])
+        });
     }
 
     function handleDisconnectionOfUser(socket) {
@@ -152,7 +170,8 @@ function handleUserRoomConnection(socket, occupiedRooms) {
         return {
             "roomName": roomName,
             "player1": clientName,
-            "createdAt": creationDate.toLocaleDateString() + " " + creationDate.toLocaleTimeString()
+            "createdAt": creationDate.toLocaleDateString() + " " + creationDate.toLocaleTimeString(),
+            "draggableElements": []
         };
     }
 }

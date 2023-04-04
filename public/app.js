@@ -1,11 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    const connectButton = document.querySelector("#connect");
-    const clientName = document.querySelector("#clientName")
-    const roomName = document.querySelector("#roomName");
-    const connectionControls = document.querySelector("#connectionControls");
-    const serverMessagesContainer = document.querySelector("#serverMessagesContainer");
-    const serverMessages = document.querySelector("#serverMessages");
+    const connectButton = $("#connect");
+    const clientName = $("#clientName")
+    const roomName = $("#roomName");
+    const connectionControls = $("#connectionControls");
+    const serverMessagesContainer = $("#serverMessagesContainer");
+    const serverMessages = $("#serverMessages");
+    const draggableContainer = $("#draggableContainer");
+    const draggableElements = $(".syncedDraggable");
+    const adminCurrentRooms = $("#adminCurrentRooms");
 
     if (userIsAdmin()) {
 
@@ -21,38 +24,63 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    connectButton.addEventListener("click", () => {
+    connectButton.on("click", () => {
         if (!isUserInputValid()) {
             alert("Please fill out Name and Room Name.");
             return;
         }
-
         startConnection();
-    })
+    });
 
     function startConnection() {
 
         const socket = io();
 
-        const joinType = document.querySelector("input[name='joinType']:checked");
+        const joinType = $("input[name='joinType']:checked");
 
         socket.emit("user.connectToRoom", {
-            clientNameInput: clientName.value,
-            roomNameInput: roomName.value,
-            joinTypeInput: joinType.value
+            clientNameInput: clientName.val(),
+            roomNameInput: roomName.val(),
+            joinTypeInput: joinType.val()
         });
 
         socket.on("server.roomConnectionResult", response => {
 
             if (response.status === "success") {
-                connectionControls.style.display = "none";
-                serverMessagesContainer.style.display = "block";
+                connectionControls.hide();
+                serverMessagesContainer.show();
 
-                const newMessage = document.createElement("div");
-                newMessage.innerHTML = response.timestamp + ": " + response.message;
-                serverMessages.append(newMessage);
+                draggableElements.each(function(i, obj) {
+                    const coord = $(this).position();
+                    $(this).text(Math.round(coord.left) + " / " + Math.round(coord.top));
+                });
+                draggableContainer.show();
 
-                newMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                const message = ("<div>" + response.timestamp + ": " + response.message + "</div>");
+                serverMessages.append(message);
+                serverMessages.animate({ scrollTop: serverMessages.prop("scrollHeight")}, 700);
+
+                draggableElements.draggable({
+                    drag: function (event, ui) {
+                        const coord = $(this).position();
+                        $(this).text(Math.round(coord.left) + " / " + Math.round(coord.top));
+                        socket.emit('user.dragElement', {
+                            id: $(this).attr('id'),
+                            x: coord.left,
+                            y: coord.top
+                        });
+                    }
+                });
+
+                socket.on("server.updatePositionOfDraggableElement", function (data) {
+                    const draggableElement = $("#" + data.id);
+                    draggableElement.css({
+                        left: data.x + "px",
+                        top: data.y + "px"
+                    });
+                    const coord = draggableElement.position();
+                    draggableElement.text(Math.round(coord.left) + " / " + Math.round(coord.top));
+                });
             }
             else if (response.status === "error") {
                 alert(response.message)
@@ -60,16 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         socket.on("server.serverMessage", response => {
-            const newMessage = document.createElement("div");
-            newMessage.innerHTML = response.timestamp + ": " + response.message;
-            serverMessages.appendChild(newMessage);
-
-            newMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            const message = ("<div>" + response.timestamp + ": " + response.message + "</div>");
+            serverMessages.append(message);
+            serverMessages.animate({ scrollTop: serverMessages.prop("scrollHeight")}, 700);
         });
     }
 
     function isUserInputValid() {
-        return !(clientName.value === "" || roomName.value === "");
+        return clientName.val() !== "" && roomName.val() !== "";
     }
 
     function userIsAdmin() {
@@ -82,25 +108,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         rooms.forEach(room => {
 
-            let tdCounter = document.createElement("td");
-            tdCounter.innerHTML = counter;
-            let tdRoomName = document.createElement("td");
-            tdRoomName.innerHTML = room.roomName;
-            let tdCreatedAt = document.createElement("td");
-            tdCreatedAt.innerHTML = room.createdAt;
-            let tdPlayer1 = document.createElement("td");
-            tdPlayer1.innerHTML = Object.hasOwn(room, "player1") ? room.player1 : "-";
-            let tdPlayer2 = document.createElement("td");
-            tdPlayer2.innerHTML = Object.hasOwn(room, "player2") ? room.player2 : "-";
+            let row = "<tr>";
+            row += "<td>" + counter + "</td>";
+            row += "<td>" + room.roomName + "</td>";
+            row += "<td>" + room.createdAt + "</td>";
+            row += "<td>" + (Object.hasOwn(room, "player1") ? room.player1 : "-") + "</td>";
+            row += "<td>" + (Object.hasOwn(room, "player2") ? room.player2 : "-") + "</td>";
+            row += "</tr>";
 
-            let tableRow = document.createElement("tr");
-            tableRow.appendChild(tdCounter);
-            tableRow.appendChild(tdRoomName);
-            tableRow.appendChild(tdCreatedAt);
-            tableRow.appendChild(tdPlayer1);
-            tableRow.appendChild(tdPlayer2);
-
-            document.getElementById("adminCurrentRooms").appendChild(tableRow);
+            adminCurrentRooms.append(row);
 
             counter++;
         });

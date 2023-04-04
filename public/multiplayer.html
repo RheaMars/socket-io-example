@@ -6,6 +6,9 @@
 
     <link rel="stylesheet" href="style.css">
 
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js" charset="utf-8"></script>
 </head>
@@ -42,6 +45,10 @@
         <div id="serverMessages"></div>
     </div>
 
+    <div id="draggableContainer">
+        <div id="draggableElement1" class="syncedDraggable" draggable="true" style="background-color: #ffcc00;">Drag me!</div>
+        <div id="draggableElement2" class="syncedDraggable" draggable="true" style="background-color: #00ccff;left: 60px;">No, drag me!</div>
+    </div>
 </div>
 
 </body>
