@@ -4,8 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const clientName = $("#clientName")
     const roomName = $("#roomName");
     const connectionControls = $("#connectionControls");
-    const serverMessagesContainer = $("#serverMessagesContainer");
-    const serverMessages = $("#serverMessages");
+    const chatArea = $("#chatArea");
     const draggableContainer = $("#draggableContainer");
     const draggableElements = $(".syncedDraggable");
     const adminCurrentRooms = $("#adminCurrentRooms");
@@ -48,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (response.status === "success") {
                 connectionControls.hide();
-                serverMessagesContainer.show();
+                chatArea.show();
 
                 draggableElements.each(function(i, obj) {
                     const coord = $(this).position();
@@ -56,9 +55,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 draggableContainer.show();
 
-                const message = ("<div>" + response.timestamp + ": " + response.message + "</div>");
-                serverMessages.append(message);
-                serverMessages.animate({ scrollTop: serverMessages.prop("scrollHeight")}, 700);
+                const message = ("<div class='serverMessage'>" + response.timestamp + ": " + response.message + "</div>");
+                chatArea.append(message);
+                chatArea.animate({ scrollTop: chatArea.prop("scrollHeight")}, 700);
 
                 draggableElements.draggable({
                     drag: function (event, ui) {
@@ -88,9 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         socket.on("server.serverMessage", response => {
-            const message = ("<div>" + response.timestamp + ": " + response.message + "</div>");
-            serverMessages.append(message);
-            serverMessages.animate({ scrollTop: serverMessages.prop("scrollHeight")}, 700);
+            const message = ("<div class='serverMessage'>" + response.timestamp + ": " + response.message + "</div>");
+            chatArea.append(message);
+            chatArea.animate({ scrollTop: chatArea.prop("scrollHeight")}, 700);
         });
     }
 

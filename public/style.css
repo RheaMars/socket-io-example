@@ -16,20 +16,20 @@ table#adminCurrentRooms th, table#adminCurrentRooms td {
     width: 30%;
 }
 
-#serverMessagesContainer {
+#chatArea {
     display: none;
-}
-
-#serverMessages {
     border: 1px solid black;
     padding: 4px;
-    width: 30%;
+    position: fixed;
+    top: 0;
+    right: 0;
     height: 100px;
     font-size: 11px;
     overflow-y: scroll;
+    width: 20%;
 }
 
-#serverMessages div {
+#chatArea div {
     padding-top: 6px;
 }
 
@@ -43,4 +43,8 @@ table#adminCurrentRooms th, table#adminCurrentRooms td {
     cursor: pointer;
     border: 1px solid black;
     padding: 5px;
+}
+
+.serverMessage {
+    color: blue;
 }
