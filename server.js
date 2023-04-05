@@ -75,6 +75,8 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             playerNumber: socketPlayerNumber
         });
 
+        handleChatMessages(socket, room, socketClientName);
+
         handleDraggableElements(socket, room);
     }
 
@@ -128,7 +130,20 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             timestamp: getCurrentTimestamp(new Date()),
         });
 
+        handleChatMessages(socket, room, socketClientName);
+
         handleDraggableElements(socket, room);
+    }
+
+    function handleChatMessages(socket, room, socketClientName) {
+
+        socket.on("user.sendChatMessage", function(message) {
+
+            io.in(room.roomName).emit("server.chatMessage", {
+                message: socketClientName + ": " + message,
+                timestamp: getCurrentTimestamp(new Date()),
+            });
+        });
     }
 
     function handleDraggableElements(socket, room) {

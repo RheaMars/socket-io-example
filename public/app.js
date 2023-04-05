@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const draggableContainer = $("#draggableContainer");
     const draggableElements = $(".syncedDraggable");
     const adminCurrentRooms = $("#adminCurrentRooms");
+    const chatMessageInput = $("#chatMessageInput");
+    const chatMessageForm = $("#chatMessageForm");
 
     if (userIsAdmin()) {
 
@@ -48,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.status === "success") {
                 connectionControls.hide();
                 chatArea.show();
+                chatMessageForm.show();
 
                 draggableElements.each(function(i, obj) {
                     const coord = $(this).position();
@@ -55,9 +58,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 draggableContainer.show();
 
-                const message = ("<div class='serverMessage'>" + response.timestamp + ": " + response.message + "</div>");
-                chatArea.append(message);
-                chatArea.animate({ scrollTop: chatArea.prop("scrollHeight")}, 700);
+                const message = "<div class='serverMessage'>" + response.timestamp + " " + response.message + "</div>";
+                appendMessageToChatArea(chatArea, message);
 
                 draggableElements.draggable({
                     drag: function (event, ui) {
@@ -80,6 +82,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     const coord = draggableElement.position();
                     draggableElement.text(Math.round(coord.left) + " / " + Math.round(coord.top));
                 });
+
+                $("#chatMessageForm").submit(function(data){
+                    socket.emit("user.sendChatMessage", chatMessageInput.val());
+                    chatMessageInput.val("");
+                    return false;
+                });
             }
             else if (response.status === "error") {
                 alert(response.message)
@@ -87,9 +95,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         socket.on("server.serverMessage", response => {
-            const message = ("<div class='serverMessage'>" + response.timestamp + ": " + response.message + "</div>");
-            chatArea.append(message);
-            chatArea.animate({ scrollTop: chatArea.prop("scrollHeight")}, 700);
+            const message = "<div class='serverMessage'>" + response.timestamp + " " + response.message + "</div>";
+            appendMessageToChatArea(chatArea, message);
+        });
+
+        socket.on("server.chatMessage", response => {
+            const message = "<div class='chatMessage'>" + response.timestamp + " " + response.message + "</div>";
+            appendMessageToChatArea(chatArea, message);
         });
     }
 
@@ -119,5 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             counter++;
         });
+    }
+
+    function appendMessageToChatArea(chatArea, message) {
+        chatArea.append(message);
+        chatArea.animate({scrollTop: chatArea.prop("scrollHeight")}, 700);
     }
 })

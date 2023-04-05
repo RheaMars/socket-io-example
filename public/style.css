@@ -48,3 +48,24 @@ table#adminCurrentRooms th, table#adminCurrentRooms td {
 .serverMessage {
     color: blue;
 }
+
+#chatMessageForm {
+    display: none;
+    padding: 1px;
+    position: fixed;
+    bottom: 10px;
+    width: 50%;
+}
+
+#chatMessageInput {
+    border: 1px solid black;
+    padding: 10px;
+    width: 85%;
+}
+
+#submitChatMessageButton {
+    width: 10%;
+    background: black;
+    padding: 10px;
+    color: white;
+}
