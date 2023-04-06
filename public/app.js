@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const draggableElements = $(".syncedDraggable");
     const adminCurrentRooms = $("#adminCurrentRooms");
     const chatMessageInput = $("#chatMessageInput");
-    const chatMessageForm = $("#chatMessageForm");
+    const chatWrapper = $("#chatWrapper");
 
     if (userIsAdmin()) {
 
@@ -49,8 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (response.status === "success") {
                 connectionControls.hide();
-                chatArea.show();
-                chatMessageForm.show();
+                chatWrapper.show();
 
                 draggableElements.each(function(i, obj) {
                     const coord = $(this).position();

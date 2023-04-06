@@ -13,20 +13,24 @@ table#adminCurrentRooms th, table#adminCurrentRooms td {
 }
 
 #connectionControls {
-    width: 30%;
+    min-width: 390px;
+    max-width: 30%;
+}
+
+#chatWrapper {
+    display: none;
+    position: fixed;
+    bottom: 10px;
+    width: 100%;
 }
 
 #chatArea {
-    display: none;
     border: 1px solid black;
     padding: 4px;
-    position: fixed;
-    top: 0;
-    right: 0;
+    width: 30%;
     height: 100px;
     font-size: 11px;
     overflow-y: scroll;
-    width: 20%;
 }
 
 #chatArea div {
@@ -49,23 +53,15 @@ table#adminCurrentRooms th, table#adminCurrentRooms td {
     color: blue;
 }
 
-#chatMessageForm {
-    display: none;
-    padding: 1px;
-    position: fixed;
-    bottom: 10px;
-    width: 50%;
-}
-
 #chatMessageInput {
     border: 1px solid black;
-    padding: 10px;
-    width: 85%;
+    padding: 4px;
+    width: 30%;
 }
 
 #submitChatMessageButton {
-    width: 10%;
+    width:60px;
     background: black;
-    padding: 10px;
+    padding: 4px;
     color: white;
 }

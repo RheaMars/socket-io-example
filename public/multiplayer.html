@@ -40,17 +40,18 @@
         </fieldset>
     </div>
 
-    <div id="chatArea"></div>
-
     <div id="draggableContainer">
         <div id="draggableElement1" class="syncedDraggable" draggable="true" style="background-color: #ffcc00;">Drag me!</div>
         <div id="draggableElement2" class="syncedDraggable" draggable="true" style="background-color: #00ccff;left: 60px;">No, drag me!</div>
     </div>
 
-    <form id="chatMessageForm" action="">
-        <input id="chatMessageInput" autocomplete="off" />
-        <button id="submitChatMessageButton">Send</button>
-    </form>
+    <div id="chatWrapper">
+        <div id="chatArea"></div>
+        <form id="chatMessageForm" action="">
+            <input id="chatMessageInput" placeholder="Type in your Message" autocomplete="off" />
+            <button id="submitChatMessageButton">Send</button>
+        </form>
+    </div>
 </div>
 
 </body>
