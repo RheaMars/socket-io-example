@@ -2,6 +2,7 @@ const socketio = require("socket.io");
 const server = startServer();
 io = socketio(server);
 
+const DEBUG = process.env.DEBUG || false;
 const occupiedRooms = [];
 const minutesToTimeout = 20;
 
@@ -75,6 +76,10 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             playerNumber: socketPlayerNumber
         });
 
+        if (DEBUG) {
+            console.log(socketClientName + " connected to room " + socketRoomName);
+        }
+
         handleChatMessages(socket, room, socketClientName);
 
         handleDraggableElements(socket, room);
@@ -139,6 +144,10 @@ function handleUserRoomConnection(socket, occupiedRooms) {
 
         socket.on("user.sendChatMessage", function(message) {
 
+            if (DEBUG) {
+                console.log(socketClientName + " sent message in room " + room.roomName + ": " + message);
+            }
+
             io.in(room.roomName).emit("server.chatMessage", {
                 message: socketClientName + ": " + message,
                 timestamp: getCurrentTimestamp(new Date()),
@@ -155,6 +164,11 @@ function handleUserRoomConnection(socket, occupiedRooms) {
         }
 
         socket.on("user.dragElement", function(data) {
+
+            if (DEBUG) {
+                console.log("Element is dragged.");
+            }
+
             draggableElements[data.id] = data;
             socket.broadcast.to(room.roomName).emit('server.updatePositionOfDraggableElement', draggableElements[data.id])
         });
@@ -164,6 +178,10 @@ function handleUserRoomConnection(socket, occupiedRooms) {
 
         socket.on("disconnecting", (reason) => {
 
+            if (DEBUG) {
+                console.log(socketClientName + " is disconnecting: " + reason);
+            }
+
             io.in(socketRoomName).emit("server.serverMessage", {
                 message: socketClientName + " left the Room (" + reason + ").",
                 timestamp: getCurrentTimestamp(new Date()),
@@ -172,9 +190,15 @@ function handleUserRoomConnection(socket, occupiedRooms) {
             // Last player is about to leave:
             if (getNumberOfClientsConnectedToRoom(socketRoomName) === 1) {
                 deleteRoom(occupiedRooms, socketRoomName);
+                if (DEBUG) {
+                    console.log(socketRoomName + " was deleted.");
+                }
             }
             else {
                 deletePlayerFromRoom(occupiedRooms, socketRoomName, socketPlayerNumber);
+                if (DEBUG) {
+                    console.log("Player " + socketPlayerNumber + " was deleted from room " + socketRoomName + ".");
+                }
             }
         })
     }
@@ -197,6 +221,10 @@ function handleUserRoomConnection(socket, occupiedRooms) {
 function handleConnectionTimeout(socket) {
 
     setTimeout(() => {
+
+        if (DEBUG) {
+            console.log("Client is disconnected due to inactivity.");
+        }
 
         socket.emit("server.serverMessage", {
             message: "You were disconnected due to inactivity.",
