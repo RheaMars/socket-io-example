@@ -17,7 +17,6 @@ function serve() {
 
         if (DEBUG) {
             console.log("Connection set up.");
-            console.log(socket);
         }
 
         handleAdminRequestForCurrentRooms(socket, occupiedRooms);

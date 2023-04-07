@@ -6,6 +6,11 @@ This is a small example of how to set up a Socket connection between two Clients
 - An Admin page gives an overview of all current Rooms and their occupancy
 - The connected Clients are able to exchange messages via text chat and to drag elements, which are synced on drag.
 
+Note: This example is not handling disconnections and reconnections of the Clients. After programming this 
+example and deploying it on Render I learned that dis- and reconnections are a pretty common thing when
+you walk around in the world of Sockets. So just see this repo as an inspiration but keep in mind that
+this code can't be used in production as it is. :)
+
 ## How to test on localhost?
 
 - Checkout the repository.
