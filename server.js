@@ -15,6 +15,10 @@ function serve() {
 
     io.on("connection", (socket) => {
 
+        if (DEBUG) {
+            console.log("Connection set up.");
+        }
+
         handleAdminRequestForCurrentRooms(socket, occupiedRooms);
 
         handleUserRoomConnection(socket, occupiedRooms);
@@ -167,11 +171,6 @@ function handleUserRoomConnection(socket, occupiedRooms) {
         }
 
         socket.on("user.dragElement", function(data) {
-
-            if (DEBUG) {
-                console.log("Element is dragged.");
-            }
-
             draggableElements[data.id] = data;
             socket.broadcast.to(room.roomName).emit('server.updatePositionOfDraggableElement', draggableElements[data.id])
         });
@@ -189,6 +188,13 @@ function handleUserRoomConnection(socket, occupiedRooms) {
                 message: socketClientName + " left the Room (" + reason + ").",
                 timestamp: getCurrentTimestamp(new Date()),
             });
+
+            if (reason === "transport close") {
+                if (DEBUG) {
+                    console.log("Client number " + socketPlayerNumber + " is not deleted from rooms and room is not deleted.");
+                }
+                return;
+            }
 
             // Last player is about to leave:
             if (getNumberOfClientsConnectedToRoom(socketRoomName) === 1) {

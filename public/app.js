@@ -102,6 +102,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const message = "<div class='chatMessage'>" + response.timestamp + " " + response.message + "</div>";
             appendMessageToChatArea(chatArea, message);
         });
+
+        socket.on("disconnecting", (reason) => {
+            const message = "<div class='serverMessage'>You were disconnected: " + reason + "</div>";
+            appendMessageToChatArea(chatArea, message);
+        });
     }
 
     function isUserInputValid() {
