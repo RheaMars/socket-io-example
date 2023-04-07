@@ -17,6 +17,7 @@ function serve() {
 
         if (DEBUG) {
             console.log("Connection set up.");
+            console.log(socket);
         }
 
         handleAdminRequestForCurrentRooms(socket, occupiedRooms);
@@ -181,7 +182,7 @@ function handleUserRoomConnection(socket, occupiedRooms) {
         socket.on("disconnecting", (reason) => {
 
             if (DEBUG) {
-                console.log(socketClientName + " is disconnecting: " + reason);
+                console.log(socketClientName + " is disconnecting from room " + socketRoomName + ": " + reason);
             }
 
             io.in(socketRoomName).emit("server.serverMessage", {
