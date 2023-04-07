@@ -3,6 +3,9 @@ const server = startServer();
 io = socketio(server);
 
 const DEBUG = process.env.DEBUG || false;
+
+console.log("Debugging enabled: " + DEBUG);
+
 const occupiedRooms = [];
 const minutesToTimeout = 20;
 
