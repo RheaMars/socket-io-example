@@ -162,10 +162,10 @@ function handleUserRoomConnection(socket, occupiedRooms) {
 
     function handleDisconnectionOfUser(socket) {
 
-        socket.on("disconnecting", () => {
+        socket.on("disconnecting", (reason) => {
 
             io.in(socketRoomName).emit("server.serverMessage", {
-                message: socketClientName + " left the Room.",
+                message: socketClientName + " left the Room (" + reason + ").",
                 timestamp: getCurrentTimestamp(new Date()),
             });
 
