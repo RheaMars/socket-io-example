@@ -22,8 +22,14 @@ socket.on('roomUsers', ({ room, users }) => {
 socket.on('message', message => {
     console.log(message);
     outputMessage(message);
-    // Scroll automaticly down to newest message
+    // Scroll automatically down to the newest message
     chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+// Catch-all-listener
+// TODO Remove when developing is done!
+socket.onAny((event, ...args) => {
+    console.log(event, args);
 });
 
 // Message submit

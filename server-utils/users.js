@@ -1,18 +1,18 @@
 const users = [];
 
-// join user to chat
+// Join user to chat room
 function userJoin(id, username, room) {
     const user = { id, username, room };
     users.push(user);
     return user;
 }
 
-// get current user
+// Get current user
 function getCurrentUser(id) {
     return users.find(user => user.id === id);
 }
 
-// user leaves chat
+// User leaves chat
 function userLeave(id) {
     const index = users.findIndex(user => user.id === id);
     if (index != -1) {
@@ -20,7 +20,7 @@ function userLeave(id) {
     }
 }
 
-// get room users
+// Get room users
 function getRoomUsers(room) {
     return users.filter(user => user.room === room);
 }
