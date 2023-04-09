@@ -1,13 +1,15 @@
-const joinContainer = document.getElementById('join-container');
-const chatContainer = document.getElementById('chat-container');
-const joinChatForm = document.getElementById('join-chat-form');
-const chatForm = document.getElementById('chat-form');
-const chatMessages = document.querySelector('.chat-messages');
-const roomName = document.getElementById('room-name');
-const userList = document.getElementById('users');
+const joinContainer = document.getElementById("join-container");
+const chatContainer = document.getElementById("chat-container");
+const joinChatForm = document.getElementById("join-chat-form");
+const chatForm = document.getElementById("chat-form");
+const chatMessages = document.querySelector(".chat-messages");
+const roomName = document.getElementById("room-name");
+const userList = document.getElementById("users");
+const leaveRoomButton = document.getElementById("leaveRoomButton");
+const userNameInput = document.getElementById("username");
+const roomNameInput = document.getElementById("room");
 
-const userNameInput = document.getElementById('username');
-const roomNameInput = document.getElementById('room');
+users = [];
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -15,12 +17,29 @@ document.addEventListener("DOMContentLoaded", () => {
         autoConnect: false
     });
 
+    // Connect by session id if possible:
+    const sessionID = localStorage.getItem("sessionID");
+    if (sessionID) {
+        socket.auth = { sessionID };
+        socket.connect();
+        joinContainer.style.display = "none";
+        chatContainer.style.display = "block";
+    }
+    
     joinChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
         joinChat(socket, userNameInput.value, roomNameInput.value);
     });
 
-    // Message submit
+    leaveRoomButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("sessionID");
+        joinContainer.style.display = 'block';
+        chatContainer.style.display = 'none';
+
+        socket.emit("leaveRoom");
+    });
+    
     chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const msg = e.target.elements.msg.value;
@@ -31,13 +50,21 @@ document.addEventListener("DOMContentLoaded", () => {
         e.target.elements.msg.focus();
     });
 
-    socket.on("users", ({usersInRoom, room}) => {
+    socket.on("usersInRoom", ({usersInRoom, room}) => {
         usersInRoom.forEach((user) => {
-            user.self = user.userID === socket.id;
-            initReactiveProperties(user);
+            for (let i = 0; i < this.users.length; i++) {
+                const existingUser = this.users[i];
+                if (existingUser.userID === user.userID) {
+                    existingUser.connected = user.connected;
+                    return;
+                }
+            }
+            user.self = user.userID === socket.userID;
+            this.users.push(user);
         });
-        // put the current user first, and sort by username
-        this.users = usersInRoom.sort((a, b) => {
+
+        // Put the current user first, and sort by username
+        this.users.sort((a, b) => {
             if (a.self) return -1;
             if (b.self) return 1;
             if (a.username < b.username) return -1;
@@ -48,13 +75,20 @@ document.addEventListener("DOMContentLoaded", () => {
         outputUsers(this.users);
     });
 
-    socket.on("user connected", (user) => {
-        initReactiveProperties(user);
+    socket.on("userConnected", (user) => {
+        for (let i = 0; i < this.users.length; i++) {
+            const existingUser = this.users[i];
+            if (existingUser.userID === user.userID) {
+                existingUser.connected = true;
+                outputUsers(this.users);
+                return;
+            }
+        }
         this.users.push(user);
         outputUsers(this.users);
     });
 
-    socket.on("user disconnected", (id) => {
+    socket.on("userDisconnected", (id) => {
 
         // TODO Better remove user from this.users completely?!
         // Otherwise users stays forever in the list of users with a red circle.
@@ -69,11 +103,13 @@ document.addEventListener("DOMContentLoaded", () => {
         outputUsers(this.users);
     });
 
-    // Message from server
-    socket.on('message', message => {
-        outputMessage(message);
-        // Scroll automatically down to the newest message
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+    socket.on("session", ({ sessionID, userID }) => {
+        // Attach the session ID to the next reconnection attempts
+        socket.auth = { sessionID };
+        // Store it in the localStorage
+        localStorage.setItem("sessionID", sessionID);
+        // Save the ID of the user
+        socket.userID = userID;
     });
 
     socket.on("disconnect", () => {
@@ -83,6 +119,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         outputUsers(this.users);
+    });
+    
+    socket.on('message', message => {
+        outputMessage(message);
+        // Scroll to the newest message:
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
     // Catch-all-listener
@@ -94,17 +136,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function joinChat(socket, username, room) {
 
+    this.users = [];
+
     socket.auth = { username, room };
     socket.connect();
 
     joinContainer.style.display = 'none';
     chatContainer.style.display = 'block';
 }
-
-const initReactiveProperties = (user) => {
-    user.connected = true;
-    //user.messages = [];
-};
 
 // Output message to DOM
 function outputMessage(message) {

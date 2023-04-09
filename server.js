@@ -3,20 +3,37 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 
+const crypto = require("crypto");
+const formatMessage = require('./server-utils/messages');
+const { InMemorySessionStore } = require("./server-utils/sessionStore");
+
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-const formatMessage = require('./server-utils/messages');
-const { userJoin, getCurrentUser, userLeave, getRoomUsers } = require('./server-utils/users');
-
-const botName = 'ChatApp Bot';
-
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
 
+const randomId = () => crypto.randomBytes(8).toString("hex");
+const sessionStore = new InMemorySessionStore();
+
 // Middleware to handle authentication
 io.use((socket, next) => {
+
+    // Check if user can be found by session id:
+    const sessionID = socket.handshake.auth.sessionID;
+    if (sessionID) {
+        const session = sessionStore.findSession(sessionID);
+        if (session) {
+            socket.sessionID = sessionID;
+            socket.userID = session.userID;
+            socket.username = session.username;
+            socket.room = session.room;
+            return next();
+        }
+    }
+
+    // If no session was found create new session data:
     const username = socket.handshake.auth.username;
     const room = socket.handshake.auth.room;
     if (!username) {
@@ -25,6 +42,8 @@ io.use((socket, next) => {
     if (!room) {
         return next(new Error("invalid room"));
     }
+    socket.sessionID = randomId();
+    socket.userID = randomId();
     socket.username = username;
     socket.room = room;
     next();
@@ -37,53 +56,69 @@ io.on('connection', socket => {
 
     const room = socket.room;
 
+    // Persist session
+    sessionStore.saveSession(socket.sessionID, {
+        userID: socket.userID,
+        username: socket.username,
+        connected: true,
+        room: room
+    });
+
+    // Emit session details
+    socket.emit("session", {
+        sessionID: socket.sessionID,
+        userID: socket.userID,
+    });
+
     socket.join(room);
 
     // Fetch existing users
     const usersInRoom = [];
-    for (let [id, socket] of io.of("/").sockets) {
-        if (room === socket.room) {
+    sessionStore.findAllSessions().forEach((session) => {
+        if (room === session.room) {
             usersInRoom.push({
-                userID: id,
-                username: socket.username,
-                room: socket.room
-            });
+                userID: session.userID,
+                username: session.username,
+                connected: session.connected,
+                room: session.room
+            })
         }
-    }
-    // console.log("Users in room:");
-    // console.log(usersInRoom);
 
-    // Welcome current user
-    socket.emit('message', formatMessage(botName, 'Welcome to Chat App!'));
-
-    // Broadcast when a user connects
-    socket.broadcast.to(room).emit('message', formatMessage(botName, `${socket.username} has joined the chat.`));
-
-
-    socket.emit("users", { usersInRoom, room });
-
-    // Notify existing users in room
-    socket.broadcast.to(room).emit("user connected", {
-        userID: socket.id,
-        username: socket.username,
-        room: room
     });
 
-    // Listen for chatMessage
-    socket.on('chatMessage', (msg) => {
-        // emit message to everyone in room
+    socket.emit("usersInRoom", { usersInRoom, room });
+
+    // Notify existing users in room
+    socket.broadcast.to(room).emit("userConnected", {
+        userID: socket.userID,
+        username: socket.username,
+        room: room,
+        connected: true,
+    });
+
+    socket.on("leaveRoom", () => {
+        socket.disconnect();
+        //sessionStore.deleteSession(socket.sessionID);
+    });
+
+    socket.on("disconnect", async () => {
+        const matchingSockets = await io.in(socket.userID).allSockets();
+        const isDisconnected = matchingSockets.size === 0;
+
+        if (isDisconnected) {
+            socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
+
+            // Update the connection status of the session
+            sessionStore.saveSession(socket.sessionID, {
+                userID: socket.userID,
+                username: socket.username,
+                connected: false,
+                room: socket.room
+            });
+        }});
+
+    socket.on("chatMessage", (msg) => {
         io.to(socket.room).emit('message', formatMessage(socket.username, msg));
-    })
-
-    // Runs when user disconnects
-    socket.on('disconnect', () => {
-
-        console.log(socket.username + " is disconnecting");
-
-        io.to(socket.room).emit('message', formatMessage(botName, `${socket.username} has left the chat.`));
-
-        // notify users upon disconnection
-        socket.broadcast.to(socket.room).emit("user disconnected", socket.id);
     });
 });
 
