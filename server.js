@@ -33,42 +33,40 @@ io.use((socket, next) => {
 // Run when client connects
 io.on('connection', socket => {
 
-    console.log(socket.username + " is connecting");
+    console.log(socket.username + " is connecting to room " + socket.room);
 
-    socket.on('joinRoom', ({ username, room }) => {
+    const room = socket.room;
 
-        console.log(socket.username + " is connecting to room " + room);
+    socket.join(room);
 
-        socket.join(room);
-
-        // Fetch existing users
-        const usersInRoom = [];
-        for (let [id, socket] of io.of("/").sockets) {
-            if (socket.room === room) {
-                usersInRoom.push({
-                    userID: id,
-                    username: socket.username,
-                    room: socket.room
-                });
-            }
+    // Fetch existing users
+    const usersInRoom = [];
+    for (let [id, socket] of io.of("/").sockets) {
+        if (room === socket.room) {
+            usersInRoom.push({
+                userID: id,
+                username: socket.username,
+                room: socket.room
+            });
         }
-        // console.log("Users in room:");
-        // console.log(usersInRoom);
+    }
+    // console.log("Users in room:");
+    // console.log(usersInRoom);
 
-        // Welcome current user
-        socket.emit('message', formatMessage(botName, 'Welcome to Chat App!'));
+    // Welcome current user
+    socket.emit('message', formatMessage(botName, 'Welcome to Chat App!'));
 
-        // Broadcast when a user connects
-        socket.broadcast.to(room).emit('message', formatMessage(botName, `${socket.username} has joined the chat.`));
+    // Broadcast when a user connects
+    socket.broadcast.to(room).emit('message', formatMessage(botName, `${socket.username} has joined the chat.`));
 
-        socket.emit("users", { usersInRoom, room });
 
-        // Notify existing users in room
-        socket.broadcast.to(room).emit("user connected", {
-            userID: socket.id,
-            username: socket.username,
-            room: room
-        });
+    socket.emit("users", { usersInRoom, room });
+
+    // Notify existing users in room
+    socket.broadcast.to(room).emit("user connected", {
+        userID: socket.id,
+        username: socket.username,
+        room: room
     });
 
     // Listen for chatMessage

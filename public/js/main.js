@@ -99,9 +99,6 @@ function joinChat(socket, username, room) {
 
     joinContainer.style.display = 'none';
     chatContainer.style.display = 'block';
-
-    // Join chatroom
-    socket.emit('joinRoom', { username, room });
 }
 
 const initReactiveProperties = (user) => {
