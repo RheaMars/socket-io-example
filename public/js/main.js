@@ -10,25 +10,26 @@ const userNameInput = document.getElementById('username');
 const roomNameInput = document.getElementById('room');
 
 document.addEventListener("DOMContentLoaded", () => {
-    joinChatForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        joinChat(userNameInput.value, roomNameInput.value);
-    });
-});
-
-function joinChat(username, room) {
 
     const socket = io({
         autoConnect: false
     });
-    socket.auth = { username, room };
-    socket.connect();
 
-    joinContainer.style.display = 'none';
-    chatContainer.style.display = 'block';
+    joinChatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        joinChat(socket, userNameInput.value, roomNameInput.value);
+    });
 
-    // Join chatroom
-    socket.emit('joinRoom', { username, room });
+    // Message submit
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const msg = e.target.elements.msg.value;
+        socket.emit('chatMessage', msg);
+
+        // Clear input
+        e.target.elements.msg.value = '';
+        e.target.elements.msg.focus();
+    });
 
     socket.on("users", ({usersInRoom, room}) => {
         usersInRoom.forEach((user) => {
@@ -89,18 +90,18 @@ function joinChat(username, room) {
     socket.onAny((event, ...args) => {
         console.log("Catch-all-listener", event, args);
     });
+});
 
-    // Message submit
-    chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const msg = e.target.elements.msg.value;
-        socket.emit('chatMessage', msg);
+function joinChat(socket, username, room) {
 
-        // Clear input
-        e.target.elements.msg.value = '';
-        e.target.elements.msg.focus();
-    });
+    socket.auth = { username, room };
+    socket.connect();
 
+    joinContainer.style.display = 'none';
+    chatContainer.style.display = 'block';
+
+    // Join chatroom
+    socket.emit('joinRoom', { username, room });
 }
 
 const initReactiveProperties = (user) => {
