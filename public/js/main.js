@@ -16,15 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const socket = io({
         autoConnect: false
     });
-
-    // Connect by session id if possible:
-    const sessionID = localStorage.getItem("sessionID");
-    if (sessionID) {
-        socket.auth = { sessionID };
-        socket.connect();
-        joinContainer.style.display = "none";
-        chatContainer.style.display = "block";
-    }
     
     joinChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -33,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     leaveRoomButton.addEventListener("click", (e) => {
         e.preventDefault();
-        localStorage.removeItem("sessionID");
         joinContainer.style.display = 'block';
         chatContainer.style.display = 'none';
 
@@ -106,8 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.on("session", ({ sessionID, userID }) => {
         // Attach the session ID to the next reconnection attempts
         socket.auth = { sessionID };
-        // Store it in the localStorage
-        localStorage.setItem("sessionID", sessionID);
         // Save the ID of the user
         socket.userID = userID;
     });

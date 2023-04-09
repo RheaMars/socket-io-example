@@ -102,20 +102,17 @@ io.on('connection', socket => {
     });
 
     socket.on("disconnect", async () => {
-        const matchingSockets = await io.in(socket.userID).allSockets();
-        const isDisconnected = matchingSockets.size === 0;
 
-        if (isDisconnected) {
-            socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
+        socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
 
-            // Update the connection status of the session
-            sessionStore.saveSession(socket.sessionID, {
-                userID: socket.userID,
-                username: socket.username,
-                connected: false,
-                room: socket.room
-            });
-        }});
+        // Update the connection status of the session
+        sessionStore.saveSession(socket.sessionID, {
+            userID: socket.userID,
+            username: socket.username,
+            connected: false,
+            room: socket.room
+        });
+    });
 
     socket.on("chatMessage", (msg) => {
         io.to(socket.room).emit('message', formatMessage(socket.username, msg));
