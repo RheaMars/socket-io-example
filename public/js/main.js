@@ -58,6 +58,15 @@ socket.on('message', message => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
+socket.on("disconnect", () => {
+    this.users.forEach((user) => {
+        if (user.self) {
+            user.connected = false;
+        }
+    });
+    outputUsers(this.users);
+});
+
 // Catch-all-listener
 // TODO Remove when developing is done!
 socket.onAny((event, ...args) => {
