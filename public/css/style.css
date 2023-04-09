@@ -187,3 +187,20 @@ a {
         display: none;
     }
 }
+
+.circle {
+    display: inline-block;
+    -webkit-border-radius:12px;
+    -moz-border-radius:12px;
+    border-radius:12px;
+    width:12px;
+    height:12px;
+}
+
+.circle.connected {
+    background-color: #5cb85c;
+}
+
+.circle.disconnected {
+    background-color: #d9534f;
+}
