@@ -1,6 +1,6 @@
 const joinContainer = document.getElementById('join-container');
 const chatContainer = document.getElementById('chat-container');
-const joinChatButton = document.getElementById('joinChatButton');
+const joinChatForm = document.getElementById('join-chat-form');
 const chatForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
 const roomName = document.getElementById('room-name');
@@ -10,12 +10,8 @@ const userNameInput = document.getElementById('username');
 const roomNameInput = document.getElementById('room');
 
 document.addEventListener("DOMContentLoaded", () => {
-    joinChatButton.addEventListener("click", (e) => {
+    joinChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (userNameInput.value === "") {
-            alert("Please enter a username.");
-            return;
-        }
         joinChat(userNameInput.value, roomNameInput.value);
     });
 });
@@ -68,6 +64,7 @@ function joinChat(username, room) {
                 break;
             }
         }
+
         outputUsers(this.users);
     });
 
@@ -96,10 +93,9 @@ function joinChat(username, room) {
     // Message submit
     chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        // get message text
         const msg = e.target.elements.msg.value;
-        // Emit message to server
         socket.emit('chatMessage', msg);
+
         // Clear input
         e.target.elements.msg.value = '';
         e.target.elements.msg.focus();
