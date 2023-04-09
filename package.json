@@ -7,11 +7,11 @@
     "start": "node server",
     "dev": "nodemon server"
   },
-  "keywords": ["socket.io"],
   "author": "Rhea Marstaller",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
+    "moment": "^2.29.4",
     "socket.io": "^4.6.1"
   },
   "devDependencies": {
