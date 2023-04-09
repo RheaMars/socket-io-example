@@ -103,6 +103,8 @@ io.on('connection', socket => {
 
     socket.on("disconnect", async () => {
 
+        console.log(socket.username + " is disconnecting from room " + socket.room);
+
         socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
 
         // Update the connection status of the session
