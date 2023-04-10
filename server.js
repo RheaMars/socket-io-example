@@ -93,24 +93,30 @@ io.on("connection", socket => {
         connected: true,
     });
 
-    socket.on("leaveRoom", () => {
-        socket.disconnect();
-        //sessionStore.deleteSession(socket.sessionID);
-    });
+    socket.on("disconnect", async (reason) => {
 
-    socket.on("disconnect", async () => {
+        console.log(socket.username + " is disconnecting from room " + socket.room + "(" + reason + ")");
 
-        console.log(socket.username + " is disconnecting from room " + socket.room);
+        // User left the room by clicking the "Leave Room" button:
+        if (reason === "client namespace disconnect") {
 
-        socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
+            sessionStore.deleteSession(socket.sessionID);
 
-        // Update the connection status of the session
-        sessionStore.saveSession(socket.sessionID, {
-            userID: socket.userID,
-            username: socket.username,
-            connected: false,
-            room: socket.room
-        });
+            socket.broadcast.to(socket.room).emit("message", formatMessage("ChatBot", socket.username + " has left the room."));
+            socket.broadcast.to(socket.room).emit("userLeftTheRoom", socket.userID);
+        }
+        // Other reasons might be TCP connection interrupts, closing of browser, page reloads, ...
+        else {
+            socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
+
+            // Update the connection status of the session
+            sessionStore.saveSession(socket.sessionID, {
+                userID: socket.userID,
+                username: socket.username,
+                connected: false,
+                room: socket.room
+            });
+        }
     });
 
     socket.on("chatMessage", (msg) => {

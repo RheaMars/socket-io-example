@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
         joinContainer.style.display = "block";
         chatContainer.style.display = "none";
 
-        socket.emit("leaveRoom");
+        socket.disconnect();
     });
     
     chatForm.addEventListener("submit", (e) => {
@@ -89,18 +89,22 @@ document.addEventListener("DOMContentLoaded", () => {
         outputUsers(this.usersInRoom);
     });
 
-    socket.on("userDisconnected", (id) => {
-
-        // TODO Better remove user from this.usersInRoom completely?!
-        // Otherwise users stays forever in the list of users with a red circle.
+    socket.on("userDisconnected", (userID) => {
         for (let i = 0; i < this.usersInRoom.length; i++) {
             const user = this.usersInRoom[i];
-            if (user.userID === id) {
+            if (user.userID === userID) {
                 user.connected = false;
                 break;
             }
         }
 
+        outputUsers(this.usersInRoom);
+    });
+
+    socket.on("userLeftTheRoom", (userID) => {
+        this.usersInRoom = this.usersInRoom.filter(function( obj ) {
+            return obj.userID !== userID;
+        });
         outputUsers(this.usersInRoom);
     });
 

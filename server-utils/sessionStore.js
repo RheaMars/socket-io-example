@@ -19,7 +19,7 @@ class InMemorySessionStore extends SessionStore {
     }
 
     deleteSession(id) {
-        delete this.sessions[id];
+        this.sessions.delete(id);
     }
 
     findAllSessions() {
