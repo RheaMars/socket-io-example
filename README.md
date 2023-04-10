@@ -1,25 +1,20 @@
-# Socket.io example: Room management, text chat & draggable elements
+# Socket.io example: Chat App with Room Management
 
-This is a small example of how to set up a Socket connection between two Clients.
+This is an example of how to implement a Chat app with Socket.io.
+Users can join predefined Rooms and exchange text messages.
 
-- Clients can create and join Rooms, exactly two Clients are able to join the same Room
-- An Admin page gives an overview of all current Rooms and their occupancy
-- The connected Clients are able to exchange messages via text chat and to drag elements, which are synced on drag.
+Disconnections and reconnections - which are in fact pretty normal in the TCP connection world as soon as you're on 
+production - are handled based on this [socket.io-Tutorial](https://socket.io/get-started/private-messaging-part-1/).
 
-Note: This example is not handling disconnections and reconnections of the Clients. After programming this 
-example and deploying it on Render I learned that dis- and reconnections are a pretty common thing when
-you walk around in the world of Sockets. So just see this repo as an inspiration but keep in mind that
-this code can't be used in production as it is. :)
+Thanks to Render I was able to deploy the application for free: 
+[https://socket-io-example.onrender.com/](https://socket-io-example.onrender.com/).
 
 ## How to test on localhost?
 
-- Checkout the repository.
 - Install dependencies e.g. by running `npm install`
 - Start the server e.g. by running `npm run dev`
 - In the browser:
-    - Call http://127.0.0.1:5000 in Tab 1, then choose "Multiplayer" and create a new room
-    - Call http://127.0.0.1:5000 in Tab 2, then choose "Multiplayer" and join the existing room
-    - You might now write text messages and drag the colored elements, which will be visible for the other Client.
-    - For an overview of all current rooms go to: http://127.0.0.1:5000/multiplayer-admin.html.
-        - Note that this page needs to be reloaded for an update.
+    - Call http://127.0.0.1:5000 in Tab 1, join a Room.
+    - Call http://127.0.0.1:5000 in Tab 2, join the same Room.
+    - You might now exchange text messages between the two Clients.
 
