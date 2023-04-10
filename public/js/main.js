@@ -9,8 +9,6 @@ const leaveRoomButton = document.getElementById("leaveRoomButton");
 const userNameInput = document.getElementById("username");
 const roomNameInput = document.getElementById("room");
 
-users = [];
-
 document.addEventListener("DOMContentLoaded", () => {
 
     const socket = io({
@@ -19,42 +17,55 @@ document.addEventListener("DOMContentLoaded", () => {
     
     joinChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        joinChat(socket, userNameInput.value, roomNameInput.value);
+
+        this.usersInRoom = [];
+
+        socket.auth = {
+            username : userNameInput.value,
+            room: roomNameInput.value
+        };
+        socket.connect();
+
+        joinContainer.style.display = "none";
+        chatContainer.style.display = "block";
     });
 
     leaveRoomButton.addEventListener("click", (e) => {
         e.preventDefault();
-        joinContainer.style.display = 'block';
-        chatContainer.style.display = 'none';
+        
+        joinContainer.style.display = "block";
+        chatContainer.style.display = "none";
 
         socket.emit("leaveRoom");
     });
     
-    chatForm.addEventListener('submit', (e) => {
+    chatForm.addEventListener("submit", (e) => {
         e.preventDefault();
+
         const msg = e.target.elements.msg.value;
-        socket.emit('chatMessage', msg);
+
+        socket.emit("chatMessage", msg);
 
         // Clear input
-        e.target.elements.msg.value = '';
+        e.target.elements.msg.value = "";
         e.target.elements.msg.focus();
     });
 
     socket.on("usersInRoom", ({usersInRoom, room}) => {
         usersInRoom.forEach((user) => {
-            for (let i = 0; i < this.users.length; i++) {
-                const existingUser = this.users[i];
+            for (let i = 0; i < this.usersInRoom.length; i++) {
+                const existingUser = this.usersInRoom[i];
                 if (existingUser.userID === user.userID) {
                     existingUser.connected = user.connected;
                     return;
                 }
             }
             user.self = user.userID === socket.userID;
-            this.users.push(user);
+            this.usersInRoom.push(user);
         });
 
         // Put the current user first, and sort by username
-        this.users.sort((a, b) => {
+        this.usersInRoom.sort((a, b) => {
             if (a.self) return -1;
             if (b.self) return 1;
             if (a.username < b.username) return -1;
@@ -62,38 +73,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         outputRoomName(room);
-        outputUsers(this.users);
+        outputUsers(this.usersInRoom);
     });
 
     socket.on("userConnected", (user) => {
-        for (let i = 0; i < this.users.length; i++) {
-            const existingUser = this.users[i];
+        for (let i = 0; i < this.usersInRoom.length; i++) {
+            const existingUser = this.usersInRoom[i];
             if (existingUser.userID === user.userID) {
                 existingUser.connected = true;
-                outputUsers(this.users);
+                outputUsers(this.usersInRoom);
                 return;
             }
         }
-        this.users.push(user);
-        outputUsers(this.users);
+        this.usersInRoom.push(user);
+        outputUsers(this.usersInRoom);
     });
 
     socket.on("userDisconnected", (id) => {
 
-        // TODO Better remove user from this.users completely?!
+        // TODO Better remove user from this.usersInRoom completely?!
         // Otherwise users stays forever in the list of users with a red circle.
-        for (let i = 0; i < this.users.length; i++) {
-            const user = this.users[i];
+        for (let i = 0; i < this.usersInRoom.length; i++) {
+            const user = this.usersInRoom[i];
             if (user.userID === id) {
                 user.connected = false;
                 break;
             }
         }
 
-        outputUsers(this.users);
+        outputUsers(this.usersInRoom);
     });
 
-    socket.on("session", ({ sessionID, userID }) => {
+    socket.on("sessionDetails", ({ sessionID, userID }) => {
         // Attach the session ID to the next reconnection attempts
         socket.auth = { sessionID };
         // Save the ID of the user
@@ -101,49 +112,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     socket.on("disconnect", () => {
-        this.users.forEach((user) => {
+        this.usersInRoom.forEach((user) => {
             if (user.self) {
                 user.connected = false;
             }
         });
-        outputUsers(this.users);
+        outputUsers(this.usersInRoom);
     });
     
-    socket.on('message', message => {
+    socket.on("message", message => {
         outputMessage(message);
         // Scroll to the newest message:
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-    // Catch-all-listener
-    // TODO Remove when developing is done!
     socket.onAny((event, ...args) => {
         console.log("Catch-all-listener", event, args);
     });
 });
 
-function joinChat(socket, username, room) {
-
-    this.users = [];
-
-    socket.auth = { username, room };
-    socket.connect();
-
-    joinContainer.style.display = 'none';
-    chatContainer.style.display = 'block';
-}
-
 // Output message to DOM
 function outputMessage(message) {
-    const div = document.createElement('div');
-    div.classList.add('message');
+    const div = document.createElement("div");
+    div.classList.add("message");
     div.innerHTML = `
         <p class="meta">${message.username}<span> - ${message.time} Uhr</span></p>
 		<p class="text">
 			${message.text}
 		</p>
         `;
-    document.querySelector('.chat-messages').appendChild(div);
+    document.querySelector(".chat-messages").appendChild(div);
 }
 
 // Add room name to DOM
@@ -161,6 +159,6 @@ function outputUsers(users) {
                     title="${user.connected ? "Online" : "Offline" }"
                 />
                 
-        </li>`).join('')}
+        </li>`).join("")}
     `;
 }

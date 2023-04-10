@@ -1,10 +1,10 @@
-const path = require('path');
-const http = require('http');
-const express = require('express');
-const socketio = require('socket.io');
+const path = require("path");
+const http = require("http");
+const express = require("express");
+const socketio = require("socket.io");
 
 const crypto = require("crypto");
-const formatMessage = require('./server-utils/messages');
+const formatMessage = require("./server-utils/messages");
 const { InMemorySessionStore } = require("./server-utils/sessionStore");
 
 const app = express();
@@ -12,7 +12,7 @@ const server = http.createServer(app);
 const io = socketio(server);
 
 // Set static folder
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 const randomId = () => crypto.randomBytes(8).toString("hex");
 const sessionStore = new InMemorySessionStore();
@@ -49,8 +49,7 @@ io.use((socket, next) => {
     next();
 });
 
-// Run when client connects
-io.on('connection', socket => {
+io.on("connection", socket => {
 
     console.log(socket.username + " is connecting to room " + socket.room);
 
@@ -65,7 +64,7 @@ io.on('connection', socket => {
     });
 
     // Emit session details
-    socket.emit("session", {
+    socket.emit("sessionDetails", {
         sessionID: socket.sessionID,
         userID: socket.userID,
     });
@@ -83,12 +82,10 @@ io.on('connection', socket => {
                 room: session.room
             })
         }
-
     });
 
     socket.emit("usersInRoom", { usersInRoom, room });
 
-    // Notify existing users in room
     socket.broadcast.to(room).emit("userConnected", {
         userID: socket.userID,
         username: socket.username,
@@ -117,7 +114,7 @@ io.on('connection', socket => {
     });
 
     socket.on("chatMessage", (msg) => {
-        io.to(socket.room).emit('message', formatMessage(socket.username, msg));
+        io.to(socket.room).emit("message", formatMessage(socket.username, msg));
     });
 });
 
