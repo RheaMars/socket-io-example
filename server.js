@@ -94,20 +94,32 @@ io.on("connection", socket => {
         message: formatMessage("ChatBot", socket.username + " has joined the room.")
     });
 
+    /**
+     * Handle disconnections based on:
+     * - "Leave Room" button click
+     * - page reload
+     * - close of browser tab
+     * - close of browser
+     */
+    socket.on("leaveRoom", () => {
+        console.log(socket.username + " leaves the room");
+
+        sessionStore.deleteSession(socket.sessionID);
+
+        socket.broadcast.to(socket.room).emit("message", formatMessage("ChatBot", socket.username + " has left the room."));
+        socket.broadcast.to(socket.room).emit("userLeftTheRoom", socket.userID);
+
+        socket.disconnect();
+    });
+
     socket.on("disconnect", async (reason) => {
 
-        console.log(socket.username + " is disconnecting from room " + socket.room + "(" + reason + ")");
+        console.log(socket.username + " is disconnecting from room " + socket.room + " (" + reason + ")");
 
-        // User left the room by clicking the "Leave Room" button:
-        if (reason === "client namespace disconnect") {
+        // Session might have been deleted before within "leaveRoom" event.
+        // If so there is nothing do, if not we have to handle a possible reconnect.
+        if (sessionStore.findSession(socket.sessionID)) {
 
-            sessionStore.deleteSession(socket.sessionID);
-
-            socket.broadcast.to(socket.room).emit("message", formatMessage("ChatBot", socket.username + " has left the room."));
-            socket.broadcast.to(socket.room).emit("userLeftTheRoom", socket.userID);
-        }
-        // Other reasons might be TCP connection interrupts, closing of browser, page reloads, ...
-        else {
             socket.broadcast.to(socket.room).emit("userDisconnected", socket.userID);
 
             // Update the connection status of the session

@@ -26,19 +26,11 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         socket.connect();
 
+        chatMessages.innerHTML = "";
         joinContainer.style.display = "none";
         chatContainer.style.display = "block";
     });
 
-    leaveRoomButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        
-        joinContainer.style.display = "block";
-        chatContainer.style.display = "none";
-
-        socket.disconnect();
-    });
-    
     chatForm.addEventListener("submit", (e) => {
         e.preventDefault();
 
@@ -50,6 +42,22 @@ document.addEventListener("DOMContentLoaded", () => {
         e.target.elements.msg.value = "";
         e.target.elements.msg.focus();
     });
+
+    leaveRoomButton.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        joinContainer.style.display = "block";
+        chatContainer.style.display = "none";
+
+        socket.emit("leaveRoom");
+    });
+
+    // Handle page reload, tab close and browser close for connected socket:
+    window.onbeforeunload = function() {
+        if (socket.connected) {
+            socket.emit("leaveRoom");
+        }
+    }
 
     socket.on("usersInRoom", ({usersInRoom, room}) => {
         usersInRoom.forEach((user) => {
@@ -151,7 +159,7 @@ function outputMessage(message) {
 			${message.text}
 		</p>
         `;
-    document.querySelector(".chat-messages").appendChild(div);
+    chatMessages.appendChild(div);
 }
 
 // Add room name to DOM
