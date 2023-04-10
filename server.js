@@ -91,6 +91,7 @@ io.on("connection", socket => {
         username: socket.username,
         room: room,
         connected: true,
+        message: formatMessage("ChatBot", socket.username + " has joined the room.")
     });
 
     socket.on("disconnect", async (reason) => {

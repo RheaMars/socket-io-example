@@ -76,7 +76,10 @@ document.addEventListener("DOMContentLoaded", () => {
         outputUsers(this.usersInRoom);
     });
 
+    // Note that this might be called on a new connection but also on a reconnection (e.g. after TCP transport close)
     socket.on("userConnected", (user) => {
+
+        // Check for reconnection:
         for (let i = 0; i < this.usersInRoom.length; i++) {
             const existingUser = this.usersInRoom[i];
             if (existingUser.userID === user.userID) {
@@ -85,8 +88,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
         }
+
+        // Handle new connection:
         this.usersInRoom.push(user);
         outputUsers(this.usersInRoom);
+        outputMessage(user.message);
     });
 
     socket.on("userDisconnected", (userID) => {
