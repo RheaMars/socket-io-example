@@ -102,7 +102,7 @@ io.on("connection", socket => {
      * - close of browser
      */
     socket.on("leaveRoom", () => {
-        console.log(socket.username + " leaves the room");
+        console.log(socket.username + " leaves the room " + socket.room);
 
         sessionStore.deleteSession(socket.sessionID);
 
