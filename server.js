@@ -6,6 +6,7 @@ const socketio = require("socket.io");
 const crypto = require("crypto");
 const formatMessage = require("./server-utils/messages");
 const { InMemorySessionStore } = require("./server-utils/sessionStore");
+const { InMemoryMessageStore } = require("./server-utils/messageStore");
 
 const app = express();
 const server = http.createServer(app);
@@ -16,6 +17,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const randomId = () => crypto.randomBytes(8).toString("hex");
 const sessionStore = new InMemorySessionStore();
+const messageStore = new InMemoryMessageStore();
 
 // Middleware to handle authentication
 io.use((socket, next) => {
@@ -133,7 +135,9 @@ io.on("connection", socket => {
     });
 
     socket.on("chatMessage", (msg) => {
-        io.to(socket.room).emit("message", formatMessage(socket.username, msg));
+        const formattedMessage = formatMessage(socket.username, msg);
+        io.to(socket.room).emit("message", formattedMessage);
+        messageStore.saveMessageToRoom(socket.room, formattedMessage);
     });
 });
 

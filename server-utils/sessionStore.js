@@ -1,6 +1,7 @@
 /* abstract */ class SessionStore {
     findSession(id) {}
     saveSession(id, session) {}
+    deleteSession(id) {}
     findAllSessions() {}
 }
 
